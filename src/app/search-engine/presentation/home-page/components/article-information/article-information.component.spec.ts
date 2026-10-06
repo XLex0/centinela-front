@@ -123,6 +123,29 @@ describe('ArticleInformationComponent', () => {
       });
     });
 
+    it('treats missing qa_pairs/status as empty and hides the card', (done) => {
+      llmSearchServiceSpy.generateQa.and.returnValue(
+        of({ query: 'ai' } as any),
+      );
+      component.ngOnInit();
+      component.articles$.subscribe(() => {
+        expect(component.qaStatus).toBe('');
+        expect(component.qaPairs).toEqual([]);
+        expect(component.showQaCard).toBeFalse();
+        done();
+      });
+    });
+
+    it('skips generateQa when the query is empty', (done) => {
+      component.query = '';
+      component.ngOnInit();
+      component.articles$.subscribe(() => {
+        expect(llmSearchServiceSpy.generateQa).not.toHaveBeenCalled();
+        expect(component.showQaCard).toBeFalse();
+        done();
+      });
+    });
+
     it('falls back to total when total_results is absent', (done) => {
       articleServiceSpy.getMostRelevantArticlesByQuery.and.returnValue(
         of({ data: [], total: 7 } as PaginationArticleResult),
@@ -130,6 +153,7 @@ describe('ArticleInformationComponent', () => {
       component.ngOnInit();
       component.articles$.subscribe(() => {
         expect(component.total).toBe(7);
+        expect(llmSearchServiceSpy.generateQa).not.toHaveBeenCalled();
         done();
       });
     });

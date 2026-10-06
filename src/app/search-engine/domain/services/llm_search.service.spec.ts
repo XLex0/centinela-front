@@ -51,6 +51,14 @@ describe('LLMSearchService', () => {
     req.flush({ query: 'ai', status: 'success', qa_pairs: [] });
   });
 
+  it('generateQa respects explicit compression and iterative flags', () => {
+    service.generateQa('ai', [], { use_compression: true, use_iterative: false }).subscribe();
+    const req = httpMock.expectOne(`${apiUrl}/v1/llm-search/generate-qa/`);
+    expect(req.request.body.use_compression).toBeTrue();
+    expect(req.request.body.use_iterative).toBeFalse();
+    req.flush({ query: 'ai', status: 'success', qa_pairs: [] });
+  });
+
   it('documentsFromArticles takes top N hits', () => {
     const docs = service.documentsFromArticles(
       [
@@ -63,5 +71,14 @@ describe('LLMSearchService', () => {
     );
     expect(docs.length).toBe(3);
     expect(docs[0]).toEqual({ scopus_id: '1', title: 'A', abstract: 'a1' });
+  });
+
+  it('documentsFromArticles defaults missing abstracts and tolerates null input', () => {
+    expect(service.documentsFromArticles(null as any)).toEqual([]);
+    const docs = service.documentsFromArticles(
+      [{ title: 'A', scopus_id: '1' } as any],
+      1,
+    );
+    expect(docs[0]).toEqual({ scopus_id: '1', title: 'A', abstract: '' });
   });
 });
